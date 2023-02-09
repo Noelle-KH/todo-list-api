@@ -3,13 +3,15 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const express = require('express')
+const routes = require('./routes')
 
 const app = express()
+require('./config/mongoose')
 const PORT = process.env.PORT || 3000
 
-app.get('/', (req, res) => {
-  res.send('<h1>Hello</h1>')
-})
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(routes)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
