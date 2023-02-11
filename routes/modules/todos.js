@@ -2,22 +2,19 @@ const router = require('express').Router()
 const Todo = require('../../models/todo')
 
 router.route('/')
-  .get((req, res) => {
+  .get((req, res, next) => {
     const userId = req.user._id
     return Todo.find({ userId })
       .then(todos => {
-        if (!todos) return res.sendStatus(204)
+        if (!todos) return next({ status: 404, message: 'Todo Not found' })
         res.json({
           status: 'Success',
           data: todos
         })
       })
-      .catch(error => res.status(500).json({
-        status: 'Error',
-        message: error.message
-      }))
+      .catch(error => next(error))
   })
-  .post((req, res) => {
+  .post((req, res, next) => {
     const userId = req.user._id
     const name = req.body.name
     return Todo.create({ name, userId })
@@ -25,42 +22,30 @@ router.route('/')
         status: 'Success',
         data: newTodo
       }))
-      .catch(error => res.status(500).json({
-        status: 'Error',
-        message: error.message
-      }))
+      .catch(error => next(error))
   })
 
 router.route('/:id')
-  .get((req, res) => {
+  .get((req, res, next) => {
     const userId = req.user._id
     const _id = req.params.id
     return Todo.findOne({ _id, userId })
       .then(todo => {
-        if (!todo) return res.status(400).json({
-          status: 'Error',
-          message: 'Todo not found'
-        })
+        if (!todo) return next({ status: 404, message: 'Todo Not found' })
         res.json({
           status: 'Success',
           data: todo
         })
       })
-      .catch(error => res.status(500).json({
-        status: 'Error',
-        message: error.message
-      }))
+      .catch(error => next(error))
   })
-  .put((req, res) => {
+  .put((req, res, next) => {
     const userId = req.user._id
     const _id = req.params.id
     const name = req.body.name
     return Todo.findOne({ _id, userId })
       .then(todo => {
-        if (!todo) return res.status(400).json({
-          status: 'Error',
-          message: 'Todo not found'
-        })
+        if (!todo) return next({ status: 404, message: 'Todo Not found' })
         todo.name = name
         todo.save()
         res.json({
@@ -68,31 +53,20 @@ router.route('/:id')
           data: todo
         })
       })
-      .catch(error => {
-        res.json({
-          status: 'Error',
-          message: error.message
-        })
-      })
+      .catch(error => next(error))
   })
-  .delete((req, res) => {
+  .delete((req, res, next) => {
     const userId = req.user._id
     const _id = req.params.id
     return Todo.findOne({ _id, userId })
       .then(todo => {
-        if (!todo) return res.status(400).json({
-          status: 'Error',
-          message: 'Todo not found'
-        })
+        if (!todo) return next({ status: 404, message: 'Todo Not found' })
         todo.remove()
         res.json({
           status: 'Success',
           data: todo
         })
       })
-      .catch(error => res.json({
-        status: 'Error',
-        message: error.message
-      }))
+      .catch(error => next(error))
   })
 module.exports = router

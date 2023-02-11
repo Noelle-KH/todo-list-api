@@ -6,25 +6,19 @@ const User = require('../../models/user')
 
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', (error, user, info) => {
-    if (error) return res.status(500).json({
-      status: 'Error',
-      message: error.message
-    })
+    if (error) return next(error)
 
-    if (!user) return res.status(400).json({
-      status: 'Error',
-      message: info.message
-    })
+    if (!user) {
+      return next({ status: 400, message: info.message })
+    }
 
     req.login(user, { session: false }, (error) => {
-      if (error) return res.status(500).json({
-        status: 'Error',
-        message: error.message
-      })
+      if (error) return next(error)
+      
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' })
       return res.status(200).json({
         status: 'Success',
-        message: '登入成功',
+        message: 'Logged in successfully.',
         data: {
           token
         }
@@ -33,33 +27,35 @@ router.post('/login', (req, res, next) => {
   })(req, res, next)
 })
 
-router.post('/register', (req, res) => {
+router.post('/register', (req, res, next) => {
   const { email, password, confirmPassword } = req.body
-  if (!email || !password) return res.status(400).json({
-    status: 'Error',
-    message: 'Email和密碼都是必填'
-  })
 
-  if (password.length < 6 || password.length > 20) return res.status(400).json({
-    status: 'Error',
-    message: '密碼長度需要介於 6 - 20 位'
-  })
+  if (!email || !password) {
+    return next({ status: 400, message: 'Email and password are required.' })
+  }
 
-  if (password !== confirmPassword) return res.status(400).json({
-    status: 'Error',
-    message: '密碼和確認密碼不相符'
-  })
+  if (password.length < 6 || password.length > 20) {
+    return next({ status: 400, message: 'Password length should between 6 - 20.' })
+  }
 
-  return User.create({ email, password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)) })
-    .then((newUser) => res.status(201).json({
-      status: 'Success',
-      message: '註冊會員成功',
-      data: newUser
-    }))
-    .catch(error => res.status(500).json({
-      status: 'Error',
-      message: error.message
-    }))
+  if (password !== confirmPassword) {
+    return next({ status: 400, message: 'Password and confirm password not the same.' })
+  }
+
+  return User.findOne({ email })
+    .then(user => {
+      if (user) {
+        return next({ status: 400, message: 'User is already exist, please use login feature.' })
+      }
+      return User.create({ email, password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)) })
+        .then((newUser) => res.status(201).json({
+          status: 'Success',
+          message: 'Registered successfully',
+          data: newUser
+        }))
+        .catch(error => next(error))
+    })
+    .catch(error => next(error))
 })
 
 module.exports = router
