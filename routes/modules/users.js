@@ -1,5 +1,6 @@
 const router = require('express').Router()
 const passport = require('passport')
+const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const User = require('../../models/user')
 
@@ -20,9 +21,13 @@ router.post('/login', (req, res, next) => {
         status: 'Error',
         message: error.message
       })
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' })
       return res.status(200).json({
         status: 'Success',
-        message: '登入成功'
+        message: '登入成功',
+        data: {
+          token
+        }
       })
     })
   })(req, res, next)
