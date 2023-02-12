@@ -44,10 +44,12 @@ const todoController = {
       .then(todo => {
         if (!todo) return next({ status: 404, message: 'Todo Not found' })
         todo.name = name
-        todo.save()
+        return todo.save()
+      })
+      .then(updateTodo => {
         res.json({
           status: 'Success',
-          data: todo
+          data: updateTodo
         })
       })
       .catch(error => next(error))
@@ -58,10 +60,12 @@ const todoController = {
     return Todo.findOne({ _id, userId })
       .then(todo => {
         if (!todo) return next({ status: 404, message: 'Todo Not found' })
-        todo.remove()
+        return todo.remove()
+      })
+      .then(removeTodo => {
         res.json({
           status: 'Success',
-          data: todo
+          data: removeTodo
         })
       })
       .catch(error => next(error))
