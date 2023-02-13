@@ -1,6 +1,7 @@
 const passport = require('passport')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
+const { validationResult } = require('express-validator')
 const User = require('../models/user')
 
 const userController = {
@@ -27,20 +28,13 @@ const userController = {
     })(req, res, next)
   },
   registerUser: (req, res, next) => {
-    const { email, password, confirmPassword } = req.body
-
-    if (!email || !password) {
-      return next({ status: 400, message: 'Email and password are required.' })
+    const { email, password } = req.body
+    const errors = validationResult(req)
+    const message = errors.array().map(error => error.msg)
+    if (!errors.isEmpty()) {
+      return next({ status: 400, message })
     }
-
-    if (password.length < 6 || password.length > 20) {
-      return next({ status: 400, message: 'Password length should between 6 - 20.' })
-    }
-
-    if (password !== confirmPassword) {
-      return next({ status: 400, message: 'Password and confirm password not the same.' })
-    }
-
+    
     return User.findOne({ email })
       .then(user => {
         if (user) {
